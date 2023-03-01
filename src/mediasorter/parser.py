@@ -23,15 +23,20 @@ YEAR_PATTERNS = (
 # Incoming basename will be split and rejoined with spaces, so there is less possibilities...
 SxxEyy_PATTERNS = (
     re.compile(r"[Ss]([0-9]+) ?[Ee]([0-9]+)"),  # Show S05 E12
-    re.compile(r" ([0-9][0-9][0-9]?) ([0-9][0-9]?[0-9]?) "),  # Show 05 24.avi.
+    re.compile(r" (\d{2,3}) (\d{2,3}) "),  # Show 05 24.avi.
+    re.compile(r" (\d{1,3})[x ](\d{2,3}) "),  # Show 5[x ]24.avi.
     re.compile(r" E([0-9]+) "),  # Episode only - if surrounded with spaces - we can be quite sure.
     re.compile(r" E([0-9]+)$")  # Same as above, but at the end.
 )
 
+
+# To be used only if tv_show type is forced.
 SxxEyy_PATTERNS_EXTENDED = (
     *SxxEyy_PATTERNS,
     re.compile(r"E([0-9][0-9])[^0-9]"),  # Show with episode id only
-    re.compile(r" ([0-9][0-9]) "),  # Show with episode id only in a very vague format, last resort!
+    re.compile(r"^([0-9][0-9])[^0-9]"),
+    re.compile(r"[^0-9]([0-9][0-9])$"),
+    re.compile(r"[ \-_]([0-9][0-9])[ \-_]"),
 )
 
 
@@ -96,9 +101,28 @@ def split_basename(
     return result
 
 
+def _find_sxx_eyy_in_dis_structure(src_path):
+    """
+    Try to find "<TV show>/Season <XX>/..."
+    """
+    season_id = None
+    show_name = None
+
+    head, season_dir = os.path.split(os.path.dirname(src_path))
+    season_pattern = re.compile(r"[Ss]eason ?(\d+)")
+    if match := re.match(season_pattern, season_dir):
+        season_id = int(match.groups()[0])
+        _, show_name = os.path.split(head)
+    return show_name, season_id
+
+
 def _find_sxx_eyy(
         src_path: str, split_characters: List[str], min_split_length: int, force: bool = False
 ) -> Tuple[List[str], int, int]:
+
+    show_name, season_id = _find_sxx_eyy_in_dis_structure(src_path)
+    if season_id:
+        force = True  # We are pretty sure it is a TV show now.
 
     # Try all the possibilities base on the configured split chars.
     splits = split_basename(src_path, split_characters=split_characters, min_split_length=min_split_length)
@@ -112,14 +136,21 @@ def _find_sxx_eyy(
             if match := re.search(pat, string):
                 # Yay! That was easy...
                 if len(match.groups()) == 1:
-                    season_id = str(1)
+                    season_id = str(1) if not season_id else season_id
                     episode_id = match.groups()[0]
                 else:
                     season_id, episode_id = match.groups()
+
                 season_id = int(season_id)
                 episode_id = int(episode_id)
-                start_index, _ = match.span()
-                return string[:start_index].split(), season_id, episode_id
+                start_index, end_index = match.span()
+
+                if not show_name:
+                    show_name = string[:start_index]
+                if not show_name:
+                    show_name = string[end_index:]
+
+                return show_name.split(), season_id, episode_id
     raise ParsingError(f"No valid Sxx Eyy found in '{src_path}'.")
 
 

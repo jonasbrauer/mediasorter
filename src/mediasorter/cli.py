@@ -298,7 +298,7 @@ def cli_root(
     scans = [
         ScanConfig(
             src_path=os.path.abspath(os.path.expanduser(src_path)),
-            type=MediaType(mediatype),
+            media_type=MediaType(mediatype),
             action=action,
             tv_shows_output=dst_path_tv if mediatype in ("tv", "auto") else None,
             movies_output=dst_path_mov if mediatype in ("movie", "auto") else None,

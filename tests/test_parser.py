@@ -68,6 +68,14 @@ SHOWS = [
         "[Erai-raws] Cyberpunk - Edgerunners - 02 [1080p][Multiple Subtitle][7E5491D9].mkv",
         ("cyberpunk edgerunners", 1, 2)
     ),
+    (
+        "IT Crowd/Season 2/05-Smoke and Mirrors.avi",
+        ("it crowd", 2, 5)
+    ),
+    (
+        "IT Crowd/Season 4/The_IT_Crowd.4x06.Reynholm_V_Reynholm.REPACK.WS_PDTV_Xv-iD.[VTV].avi",
+        ("it crowd", 4, 6)
+    ),
 ]
 
 
@@ -106,6 +114,10 @@ MOVIES = [
     (
         "Kolja [1975]",
         ("kolja", 1975, [])
+    ),
+    (
+        "A Man Called Otto (2022) 2160p HDR 5.1 - 2.0 x265 10bit Phun Psyz.avi",
+        ("a man called otto", 2022, ["2160p", "HDR"])
     ),
 ]
 
