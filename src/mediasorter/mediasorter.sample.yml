@@ -1,0 +1,160 @@
+---
+# Example configuration file for mediasorter
+# Use --setup option or copy this sample to on of
+# /etc/mediasorter/mediasorter.yml or ~/.config/mediasorter.yml
+# and replace the various attributes with the values for your environment.
+
+# (!) On Windows, make sure all paths in this configuration are formatted properly with '\\'
+mediasorter:
+
+    # Use this to configure what directories should be sorted instead of the CLI argument(s).
+    #scan_sources:
+    #  - src_path: /mnt/media  # source path (duh...)
+    #    media_type: auto  # force only a specific media type tv/mvie/auto
+    #    tv_shows_output: ~/Media/TV  # where to put recognized TV shows
+    #    movies_output: ~/Media/Movies
+
+    # Metadata API configuration
+    api:
+      # TVMaze API configuration (for TV metadata)
+      - name: tvmaze
+        # Base URL for TVMaze; should generally not be changed
+        url: "http://api.tvmaze.com"
+
+        # Search path for TVMaze; should generally not be changed
+        # Variables replaced at runtime:
+        #   * "show": the show name query, extracted from the source filename
+        path: "singlesearch/shows?q={title}&embed=episodes"
+
+      # The Movie DB API configuration (for Movie metadata)
+      - name: tmdb
+        # API key for TMDB; CHANGE THIS TO YOUR OWN VALID API KEY
+        # key: "acdefghijklmnopqrstuvwxyz1234567"
+
+        # Base URL for TMDB; should generally not be changed
+        url: "https://api.themoviedb.org/3"
+
+        # Search path for TMDB; should generally not be changed
+        # Variables replaced at runtime:
+        #  * "key": the TMDB API key specified above
+        #  * "title": the movie name query, extracted from the source filename
+        path: "search/movie?api_key={key}&query={title}"
+       
+    # Source file parameters
+    parameters:
+        # Valid file extensions for media files to parse; useful to specify which files should
+        # be parsed inside source directories when operating recursively
+        valid_extensions:
+          - '.mkv'
+          - '.avi'
+          - '.mp4'
+          - '.srt'
+
+        # Filename split characters for source files; specifies the possible characters used
+        # to split filenames, usually either periods or spaces (e.g. `My.Show.EXXYXX.mkv` or
+        # `The Great Movie 2019.mkv`); additional characters can be added if needed, tried
+        # in the order specified
+        split_characters:
+          - ' '
+          - '.'
+          - '-'
+
+        tv:
+          # Custom format for resulting TV show file name and directory structure.
+          # Final path will be "os.path.join(<tv_show_dir_format>, <tv_show_format>)"
+          # Available values are:
+          # - series_title
+          # - episode_title
+          # - season_id
+          # - episode_id
+          # ! Modify on Windows
+          dir_format: "{series_title}/Season {season_id:02d}"
+          file_format: '{series_title} S{season_id:02d}E{episode_id:02d} - {episode_title}'
+
+          # Minimum split length; specifies the minimum number of split fields to be considered
+          # a valid result for the given split_character; 3 is usually a good default; note that
+          # the source file extension is *not* counted towards this length
+          min_split_length: 3
+
+          # Whether to move "The" at the start of titles to the end of the name (e.g.
+          # "The Movie" -> "Movie, The")
+          suffix_the: false
+          # Search overrides
+          # Useful if you have some search term that sortfile is generating which does not work reliably.
+          # Use this dictionary, where the key is whatever sortfile generates, and the value is what you
+          # want to search instead, to override the actual search with another one.
+          # For example, "S.W.A.T." (TV show) ends up searching "s w a t" which matches another show, so
+          # you can use this example entry to override that.
+          # Add your own as needed; this list is populated by my own findings. PRs to add to this list
+          # are also welcome if you find shows or movies affected.
+          search_overrides:
+            "s w a t": "swat"
+
+          # Name overrides
+          # Useful if there is a show you want to "rename" to a different name than what the metadata
+          # providers return. For instance, a purist might want "Start Trek: The Original Series" instead
+          # of the returned "Star Trek". Separated by media type (tv or movie) to avoid cross-changes.
+          name_overrides:
+            "Star Trek": "Star Trek: The Original Series"
+
+        movie:
+          # Custom format for resulting movie file name. Simple ".format()" is used.
+          # Available values are:
+          # - title
+          # - year
+          file_format: "{title} {year}"
+          min_split_length: 1
+          suffix_the: false
+
+          # Arrange all files recognized as a single movie (e.g. subtitles, shasum,
+          # info, different versions - if metadata tagging is enabled, etc...) in a common
+          # subdirectory
+          subdir: true
+
+          # Custom subfolder name, if subdir=true.
+          dir_format: "{title} {year}"
+
+          # Allow metadata tagging for all sorting operations.
+          allow_metadata_tagging: false
+
+    # Map of metainfo from filenames to file appends; see readme for a detailed explanation
+    metainfo_map:
+      # Cuts
+      'Extended.*': "Extended Edition"
+      'Director.*': "Directors Cut"
+      'Theatr.*': "Theatrical Cut"
+      # Resolutions
+      '720[pP]': 720p
+      '720[iI]': 720i
+      '1080[pP]': 1080p
+      '1080[iI]': 1080i
+      '2160[pP]': 2160p
+      '4[kK]': 2160p
+      'UHD': 2160p
+      # Qualities/Sources
+      '[Ww][Ee][Bb].*': Web
+      'BD': BD
+      '[Bb]lu': BD
+      '[Bb]lu[Rr]ay': BD
+      '[Bb]lu-[Rr]ay': BD
+      '[Dd][Vv][Dd]': DVD
+      '.*[Rr][Ee][Mm][Uu][Xx].*': Remux
+      # HDR
+      'DoVi': DoVi
+      'Vision': DoVi
+      'HDR.*': HDR
+      # Audio (first three match "X.Y surround" types, but the "." will cause them to be solo)
+      '5': 5.x
+      '7': 7.x
+      '2': 2.x
+      'Atmos': Atmos
+      'TrueHD': TrueHD
+
+  # Logging configuration
+    logging:
+
+      # Enable or disable file logging
+      file: false
+
+      # Log messages to this file - ensure the user running mediasorter can write to it
+      logfile: "/var/log/mediasorter.log"
